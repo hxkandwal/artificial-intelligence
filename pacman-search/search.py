@@ -229,7 +229,7 @@ def uniformCostSearchInner(problem, visited_state_tuples, fringe_queue):
                     if successor[0] not in \
                             [visited_state_tuple[0][0] for visited_state_tuple in visited_state_tuples]:
                         # add parent-child pair that will help to backtrack
-                        fringe_queue.push((successor, states_tuple[0], states_tuple[0][2] + successor[2]), states_tuple[2] + successor[2])
+                        fringe_queue.push((successor, states_tuple[0], states_tuple[2] + successor[2]), states_tuple[2] + successor[2])
 
     return None
 
@@ -244,9 +244,61 @@ def nullHeuristic(state, problem=None):
 
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # this will contain child-parent successor pair
+    visited_state_tuples = set()
 
+    # we have to use PriorityQueue, which is a min-heap and keep minimum value node on the top.
+    fringe_queue = PriorityQueue()
+
+    # element structure : current node, parent node, effective cost
+    start_state = problem.getStartState()
+    fringe_queue.push(((problem.getStartState(), None, 0), None, 0), 0 + heuristic(start_state, problem))
+
+    # execute UFS
+    goal_tuple = aStarSearchInner(problem, visited_state_tuples, fringe_queue, heuristic)
+    print "goal_tuple :", goal_tuple
+
+    actions_stack = Stack()
+
+    # back tracking to build action stack, will be build bottom-up.
+    back_tracked_tuple = goal_tuple
+
+    while back_tracked_tuple[1] is not None:
+        actions_stack.push(back_tracked_tuple[1])
+        for visited_state_tuple in visited_state_tuples:
+            if visited_state_tuple[0] == back_tracked_tuple:
+                back_tracked_tuple = visited_state_tuple[1]
+                break
+
+    # reverse the action stack
+    actions_stack = actions_stack.list[::-1]
+    print "actions path :", actions_stack
+    return actions_stack
+
+
+def aStarSearchInner(problem, visited_state_tuples, fringe_queue, heuristic):
+
+    while len(fringe_queue.heap) > 0:
+        states_tuple = fringe_queue.pop()
+        current_state = states_tuple[0][0]
+
+        if current_state not in [visited_state_tuple[0][0] for visited_state_tuple in visited_state_tuples]:
+            visited_state_tuples.add(states_tuple)
+
+            if problem.isGoalState(current_state):
+                print "goal state :", current_state
+                return states_tuple[0]
+
+            successors = problem.getSuccessors(current_state)
+
+            if len(successors) > 0:
+                for successor in successors:
+                    if successor[0] not in \
+                            [visited_state_tuple[0][0] for visited_state_tuple in visited_state_tuples]:
+                        # add parent-child pair that will help to backtrack
+                        fringe_queue.push((successor, states_tuple[0], states_tuple[2] + successor[2]), states_tuple[2] + successor[2] + heuristic(successor[0], problem))
+
+    return None
 
 # Abbreviations
 bfs = breadthFirstSearch
