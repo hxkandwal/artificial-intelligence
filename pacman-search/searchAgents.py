@@ -287,22 +287,28 @@ class CornersProblem(search.SearchProblem):
         self._expanded = 0 # DO NOT CHANGE; Number of search nodes expanded
         # Please add any code here which you would like to use
         # in initializing the problem
-        "*** YOUR CODE HERE ***"
+        # lets define state such as its like:
+        #                       ((positionx, positiony),  (bottom-left-corner-found,
+        #                                                  bottom-right-corner-found,
+        #                                                  top-left-corner-found,
+        #                                                  top-right-corner-found))
+        self.startingPosition = ((self.startingPosition), (self.startingPosition == self.corners[0],
+                                                           self.startingPosition == self.corners[1],
+                                                           self.startingPosition == self.corners[2],
+                                                           self.startingPosition == self.corners[3]))
 
     def getStartState(self):
         """
         Returns the start state (in your state space, not the full Pacman state
         space)
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.startingPosition
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return False if False in state[1] else True
 
     def getSuccessors(self, state):
         """
@@ -323,8 +329,23 @@ class CornersProblem(search.SearchProblem):
             #   dx, dy = Actions.directionToVector(action)
             #   nextx, nexty = int(x + dx), int(y + dy)
             #   hitsWall = self.walls[nextx][nexty]
+            x,y = state[0]
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
 
-            "*** YOUR CODE HERE ***"
+            if not self.walls[nextx][nexty]:
+                nextState = ((nextx, nexty), state[1])
+
+                if nextState[0] in self.corners:
+                    corners_info = list(state[1])
+                    for i, corner in enumerate(self.corners):
+                        if nextState[0] == corner:
+                            corners_info[i] = True
+                            break
+
+                    nextState = (nextState[0], tuple(corners_info))
+
+                successors.append((nextState, action, 1))
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
@@ -335,7 +356,7 @@ class CornersProblem(search.SearchProblem):
         include an illegal move, return 999999.  This is implemented for you.
         """
         if actions == None: return 999999
-        x,y= self.startingPosition
+        x,y = self.startingPosition[0]
         for action in actions:
             dx, dy = Actions.directionToVector(action)
             x, y = int(x + dx), int(y + dy)
