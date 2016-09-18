@@ -320,7 +320,6 @@ class CornersProblem(search.SearchProblem):
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
         """
-
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
@@ -377,11 +376,32 @@ def cornersHeuristic(state, problem):
     shortest path from the state to a goal of the problem; i.e.  it should be
     admissible (as well as consistent).
     """
-    corners = problem.corners # These are the corner coordinates
-    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
+    corners = problem.corners  # These are the corner coordinates
+    walls = problem.walls  # These are the walls of the maze, as a Grid (game.py)
+    # initial assumption was to find heuristic that leads to closest corner. Heuristic for that is mentioned below:
+    # min(x - 1, walls.width - 2 - x) + min(y - 1, walls.height - 2 - y)
+    # now, consider the state also I am changing it to the closest undiscovered heuristic. (state[1] == false)
+    x, y = state[0]
+    # get all false (undiscovered) corners
+    undiscovered_corners = []
+    idx = 0
+    for corner in corners:
+        if not state[1][idx]:
+            undiscovered_corners.append(corner)
+        idx += 1
 
-    "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    if len(undiscovered_corners) == 0:
+        return 0
+
+    min_width = min([undiscovered_corner[0] for undiscovered_corner in undiscovered_corners])
+    max_width = max([undiscovered_corner[0] for undiscovered_corner in undiscovered_corners])
+    min_height = min([undiscovered_corner[1] for undiscovered_corner in undiscovered_corners])
+    max_height = max([undiscovered_corner[1] for undiscovered_corner in undiscovered_corners])
+
+    # original solution tried with min(abs(x - min_width), abs(max_width - x)) + min(abs(y - min_height), abs(max_height - y))
+    # hint worked : the shortest path does not always go to the closest food first. (hence took max)
+    return max(abs(x - min_width), abs(max_width - x)) + max(abs(y - min_height), abs(max_height - y))
+
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
