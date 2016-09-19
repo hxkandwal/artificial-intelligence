@@ -398,7 +398,8 @@ def cornersHeuristic(state, problem):
     min_height = min([undiscovered_corner[1] for undiscovered_corner in undiscovered_corners])
     max_height = max([undiscovered_corner[1] for undiscovered_corner in undiscovered_corners])
 
-    # original solution tried with min(abs(x - min_width), abs(max_width - x)) + min(abs(y - min_height), abs(max_height - y))
+    # original solution tried with min(abs(x - min_width), abs(max_width - x))
+    #                            + min(abs(y - min_height), abs(max_height - y))
     # hint worked : the shortest path does not always go to the closest food first. (hence took max)
     return max(abs(x - min_width), abs(max_width - x)) + max(abs(y - min_height), abs(max_height - y))
 
@@ -525,8 +526,39 @@ class ClosestDotSearchAgent(SearchAgent):
         walls = gameState.getWalls()
         problem = AnyFoodSearchProblem(gameState)
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # BFS again
+        queue = util.Queue()
+        queue.push((startPosition, []))
+
+        visited_set = set()
+
+        while not queue.isEmpty() and len(food.asList()) > 0:
+            queue_tuple = queue.pop()
+            (x, y), actions_stack = queue_tuple
+
+            if food[x][y]:
+                return actions_stack
+
+            if (x, y) not in visited_set:
+                visited_set.add((x, y))
+
+                # check neighbors
+                for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
+                    # Add a successor state to the successor list if the action is legal
+                    # Here's a code snippet for figuring out whether a new position hits a wall:
+                    #   x,y = currentPosition
+                    #   dx, dy = Actions.directionToVector(action)
+                    #   nextx, nexty = int(x + dx), int(y + dy)
+                    #   hitsWall = self.walls[nextx][nexty]
+                    dx, dy = Actions.directionToVector(action)
+                    nextx, nexty = int(x + dx), int(y + dy)
+
+                    if not walls[nextx][nexty]:
+                        child_action_stack = actions_stack[:]
+                        child_action_stack.append(action)
+                        queue.push(((nextx, nexty), child_action_stack))
+        return []
+
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """

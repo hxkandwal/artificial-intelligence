@@ -95,7 +95,6 @@ def depthFirstSearch(problem):
 
     # reverse the action stack
     actions_stack = actions_stack.list[::-1]
-    print "actions path :", actions_stack
     return actions_stack
 
 
@@ -119,119 +118,79 @@ def depthFirstSearchInner(problem, visited_states, actions_stack, current_state)
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    # this will contain child-parent successor pair
-    visited_state_tuples = set()
+    # this will contain the visited states (closed/visited nodes)
+    visited_states = set()
 
+    # we have to use PriorityQueue, which is a min-heap and keep minimum value node on the top.
     fringe_queue = Queue()
-    fringe_queue.push(((problem.getStartState(), None, None), None))
+    actions = []
+
+    # fringe tuple structure : current state, actions_stack, path effective cost
+    fringe_queue.push((problem.getStartState(), actions))
 
     # execute BFS
-    goal_tuple = breadthFirstSearchInner(problem, visited_state_tuples, fringe_queue)
-    print "goal_tuple :", goal_tuple
+    while not fringe_queue.isEmpty():
+        fringe_tuple = fringe_queue.pop()
+        current_state, current_actions_stack = fringe_tuple
 
-    actions_stack = Stack()
+        if problem.isGoalState(current_state):
+            return current_actions_stack
 
-    # back tracking to build action stack, will be build bottom-up.
-    back_tracked_tuple = goal_tuple
+        # check if current_state is not already visited before (graph search)
+        if current_state not in visited_states:
+            visited_states.add(current_state)
 
-    while back_tracked_tuple[1] is not None:
-        actions_stack.push(back_tracked_tuple[1])
-        for visited_state_tuple in visited_state_tuples:
-            if visited_state_tuple[0] == back_tracked_tuple:
-                back_tracked_tuple = visited_state_tuple[1]
-                break
-
-    # reverse the action stack
-    actions_stack = actions_stack.list[::-1]
-    print "actions path :", actions_stack
-    return actions_stack
-
-
-def breadthFirstSearchInner(problem, visited_state_tuples, fringe_queue):
-    future_fringe_queue = Queue()
-
-    while len(fringe_queue.list) > 0:
-        states_tuple = fringe_queue.pop()
-        current_state = states_tuple[0][0]
-
-        if current_state not in [visited_state_tuple[0][0] for visited_state_tuple in visited_state_tuples]:
-            visited_state_tuples.add(states_tuple)
-
-            if problem.isGoalState(current_state):
-                print "goal state :", current_state
-                return states_tuple[0]
-
+            # as current state is not the goal state and not explored yet
+            # so expand the current node to queue the successors in the fringe.
             successors = problem.getSuccessors(current_state)
 
-            if len(successors) > 0:
-                for successor in successors:
-                    if successor[0] not in \
-                            [visited_state_tuple[0][0] for visited_state_tuple in visited_state_tuples]:
-                        # add parent-child pair that will help to backtrack
-                        future_fringe_queue.push((successor, states_tuple[0]))
+            for successor in successors:
+                successor_state, successor_direction, successor_cost = successor
 
-    if len(future_fringe_queue.list) > 0:
-        return breadthFirstSearchInner(problem, visited_state_tuples, future_fringe_queue)
-    else:
-        return None
+                successor_action_stack = current_actions_stack[:]
+                successor_action_stack.append(successor_direction)
+                fringe_queue.push((successor_state, successor_action_stack))
+
+    return actions
 
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    # this will contain child-parent successor pair
-    visited_state_tuples = set()
+    # this will contain the visited states (closed/visited nodes)
+    visited_states = set()
 
     # we have to use PriorityQueue, which is a min-heap and keep minimum value node on the top.
     fringe_queue = PriorityQueue()
+    actions = []
 
-    # element structure : current node, parent node, effective cost
-    fringe_queue.push(((problem.getStartState(), None, 0), None, 0), 0)
+    # fringe tuple structure : current state, actions_stack, path effective cost
+    fringe_queue.push((problem.getStartState(), actions, 0), 0)
 
-    # execute UFS
-    goal_tuple = uniformCostSearchInner(problem, visited_state_tuples, fringe_queue)
-    print "goal_tuple :", goal_tuple
+    # execute UCS
+    while not fringe_queue.isEmpty():
+        fringe_tuple = fringe_queue.pop()
+        current_state, current_actions_stack, current_path_cost = fringe_tuple
 
-    actions_stack = Stack()
+        if problem.isGoalState(current_state):
+            return current_actions_stack
 
-    # back tracking to build action stack, will be build bottom-up.
-    back_tracked_tuple = goal_tuple
+        # check if current_state is not already visited before (graph search)
+        if current_state not in visited_states:
+            visited_states.add(current_state)
 
-    while back_tracked_tuple[1] is not None:
-        actions_stack.push(back_tracked_tuple[1])
-        for visited_state_tuple in visited_state_tuples:
-            if visited_state_tuple[0] == back_tracked_tuple:
-                back_tracked_tuple = visited_state_tuple[1]
-                break
-
-    # reverse the action stack
-    actions_stack = actions_stack.list[::-1]
-    print "actions path :", actions_stack
-    return actions_stack
-
-
-def uniformCostSearchInner(problem, visited_state_tuples, fringe_queue):
-
-    while len(fringe_queue.heap) > 0:
-        states_tuple = fringe_queue.pop()
-        current_state = states_tuple[0][0]
-
-        if current_state not in [visited_state_tuple[0][0] for visited_state_tuple in visited_state_tuples]:
-            visited_state_tuples.add(states_tuple)
-
-            if problem.isGoalState(current_state):
-                print "goal state :", current_state
-                return states_tuple[0]
-
+            # as current state is not the goal state and not explored yet
+            # so expand the current node to queue the successors in the fringe.
             successors = problem.getSuccessors(current_state)
 
-            if len(successors) > 0:
-                for successor in successors:
-                    if successor[0] not in \
-                            [visited_state_tuple[0][0] for visited_state_tuple in visited_state_tuples]:
-                        # add parent-child pair that will help to backtrack
-                        fringe_queue.push((successor, states_tuple[0], states_tuple[2] + successor[2]), states_tuple[2] + successor[2])
+            for successor in successors:
+                successor_state, successor_direction, successor_cost = successor
 
-    return None
+                successor_action_stack = current_actions_stack[:]
+                successor_action_stack.append(successor_direction)
+                successor_effective_cost = current_path_cost + successor_cost
+                fringe_queue.push((successor_state, successor_action_stack, successor_effective_cost), successor_effective_cost)
+
+    return actions
 
 
 def nullHeuristic(state, problem=None):
@@ -244,61 +203,43 @@ def nullHeuristic(state, problem=None):
 
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    # this will contain child-parent successor pair
-    visited_state_tuples = set()
+    # this will contain the visited states (closed/visited nodes)
+    visited_states = set()
 
     # we have to use PriorityQueue, which is a min-heap and keep minimum value node on the top.
     fringe_queue = PriorityQueue()
+    actions = []
 
-    # element structure : current node, parent node, effective cost
-    start_state = problem.getStartState()
-    fringe_queue.push(((problem.getStartState(), None, 0), None, 0), 0 + heuristic(start_state, problem))
+    # fringe tuple structure : current state, actions_stack, path effective cost
+    fringe_queue.push((problem.getStartState(), actions, 0), 0 + heuristic(problem.getStartState(), problem))
 
-    # execute UFS
-    goal_tuple = aStarSearchInner(problem, visited_state_tuples, fringe_queue, heuristic)
-    print "goal_tuple :", goal_tuple
+    # execute A*
+    while not fringe_queue.isEmpty():
+        fringe_tuple = fringe_queue.pop()
+        current_state, current_actions_stack, current_path_cost = fringe_tuple
 
-    actions_stack = Stack()
+        if problem.isGoalState(current_state):
+            return current_actions_stack
 
-    # back tracking to build action stack, will be build bottom-up.
-    back_tracked_tuple = goal_tuple
+        # check if current_state is not already visited before (graph search)
+        if current_state not in visited_states:
+            visited_states.add(current_state)
 
-    while back_tracked_tuple[1] is not None:
-        actions_stack.push(back_tracked_tuple[1])
-        for visited_state_tuple in visited_state_tuples:
-            if visited_state_tuple[0] == back_tracked_tuple:
-                back_tracked_tuple = visited_state_tuple[1]
-                break
-
-    # reverse the action stack
-    actions_stack = actions_stack.list[::-1]
-    print "actions path :", actions_stack
-    return actions_stack
-
-
-def aStarSearchInner(problem, visited_state_tuples, fringe_queue, heuristic):
-
-    while len(fringe_queue.heap) > 0:
-        states_tuple = fringe_queue.pop()
-        current_state = states_tuple[0][0]
-
-        if current_state not in [visited_state_tuple[0][0] for visited_state_tuple in visited_state_tuples]:
-            visited_state_tuples.add(states_tuple)
-
-            if problem.isGoalState(current_state):
-                print "goal state :", current_state
-                return states_tuple[0]
-
+            # as current state is not the goal state and not explored yet
+            # so expand the current node to queue the successors in the fringe.
             successors = problem.getSuccessors(current_state)
 
-            if len(successors) > 0:
-                for successor in successors:
-                    if successor[0] not in \
-                            [visited_state_tuple[0][0] for visited_state_tuple in visited_state_tuples]:
-                        # add parent-child pair that will help to backtrack
-                        fringe_queue.push((successor, states_tuple[0], states_tuple[2] + successor[2]), states_tuple[2] + successor[2] + heuristic(successor[0], problem))
+            for successor in successors:
+                successor_state, successor_direction, successor_cost = successor
 
-    return None
+                successor_action_stack = current_actions_stack[:]
+                successor_action_stack.append(successor_direction)
+                # for A*, we also consider the heuristic cost.
+                # f(n) = g(n) + h(n)
+                successor_effective_cost = current_path_cost + successor_cost + heuristic(successor_state, problem)
+                fringe_queue.push((successor_state, successor_action_stack, current_path_cost + successor_cost), successor_effective_cost)
+
+    return actions
 
 # Abbreviations
 bfs = breadthFirstSearch
