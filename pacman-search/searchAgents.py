@@ -495,8 +495,16 @@ def foodHeuristic(state, problem):
     problem.heuristicInfo['wallCount']
     """
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+    max_food_distance = 0
+    # check the most farthest food available. This is because in order to eat all the dots we have to estimate
+    # that at-least that (max) amount of travelling is still needed by the pacman, as the last dot would be the
+    # goal state. Also, as the mazeDistance is using bfs to compute the distance, which will give the shortest
+    # distance from current position to the last dot position, hence it will be under-estimate always.
+    for food_position in foodGrid.asList():
+        max_food_distance = max(max_food_distance, mazeDistance(food_position, position, problem.startingGameState))
+
+    return max_food_distance
+
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -526,7 +534,7 @@ class ClosestDotSearchAgent(SearchAgent):
         walls = gameState.getWalls()
         problem = AnyFoodSearchProblem(gameState)
 
-        # BFS again
+        # BFS again (not using existing implemented code to avoid node expansions)
         queue = util.Queue()
         queue.push((startPosition, []))
 
