@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -149,8 +149,24 @@ class ExactInference(InferenceModule):
         pacmanPosition = gameState.getPacmanPosition()
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
 
+        """
+            we are doing an estimation of new beliefs based the distance between pacman position and possible ghost
+            positions
+
+            As we know the emissionModel for any TrueDistance is =
+
+                    P (noisyDistance | TrueDistance)
+
+            which gives the probability of noisyDistance as per to the trueDistance i.e.
+                a. emissionModel[trueDistance] > 0.5, ghost is far from pacman
+                b. emissionModel[trueDistance] < 0.5, ghost is closer to pacman
+
+            The new belief can be computed as:
+
+                new_belief_value_for_ghost_position = P (noisyDistance | TrueDistance) *  old_belief_value_for_ghost_position
+
+        """
         # Replace this code with a correct observation update
         # Be sure to handle the "jail" edge case where the ghost is eaten
         # and noisyDistance is None
@@ -158,7 +174,15 @@ class ExactInference(InferenceModule):
         for p in self.legalPositions:
             trueDistance = util.manhattanDistance(p, pacmanPosition)
             if emissionModel[trueDistance] > 0:
-                allPossible[p] = 1.0
+                allPossible[p] = emissionModel[trueDistance] * self.beliefs[p]
+
+        # handling the "jail" edge case: (noisyDistance == None)
+        #
+        # if the ghost we are tracking is on the same location as that of pacman, then we have eaten the ghost.
+        # As from the hint given in the problem statement: when a ghost is eaten, we should place that ghost in
+        # its prison cell, with probability 1.0.
+        if noisyDistance is None:
+            allPossible[self.getJailPosition()] = 1.0
 
         "*** END YOUR CODE HERE ***"
 
