@@ -176,11 +176,13 @@ class ExactInference(InferenceModule):
             if emissionModel[trueDistance] > 0:
                 allPossible[p] = emissionModel[trueDistance] * self.beliefs[p]
 
-        # handling the "jail" edge case: (noisyDistance == None)
-        #
-        # if the ghost we are tracking is on the same location as that of pacman, then we have eaten the ghost.
-        # As from the hint given in the problem statement: when a ghost is eaten, we should place that ghost in
-        # its prison cell, with probability 1.0.
+        """ handling the "jail" edge case: (noisyDistance == None)
+
+            if the ghost we are tracking is on the same location as that of pacman, then we have eaten the ghost.
+            Since, we are only dealing with 1 ghost so, when a ghost is eaten, we should place that ghost in
+            its prison cell, with probability 1.0
+
+        """
         if noisyDistance is None:
             allPossible[self.getJailPosition()] = 1.0
 
@@ -243,7 +245,35 @@ class ExactInference(InferenceModule):
         positions after a time update from a particular position.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        # create a fresh dictionary for storing the beliefs at all legal positions.
+        allPossible = util.Counter()
+
+        # iterate through all the legal positions.
+        for p in self.legalPositions:
+            oldPos = p
+
+            # as mentioned in the comments, obtain the distribution over new positions for the ghost,
+            # given its previous position (oldPos) as well as Pacman's current position.
+            newPosDist = self.getPositionDistribution(self.setGhostPosition(gameState, oldPos))
+
+            # iterate through the position distribution and determine the new belief for new position.
+            for newPos, prob in newPosDist.items():
+                # newPostDist[p] = Pr( ghost is at position p at time t + 1 | ghost is at position oldPos at time t )
+                #
+                # new belief value for ghost position = Summation of product of all the probabilities at time t + 1
+                #                   
+                #                 Pr( ghost is at position p at time t + 1 | ghost is at position oldPos at time t )
+                #                                               *
+                #                           old belief value for ghost at position p
+                #
+                allPossible[newPos] += self.beliefs[oldPos] * prob
+
+        # normalize the updated beliefs
+        allPossible.normalize()
+
+        # update the pacman with new beliefs
+        self.beliefs = allPossible
 
     def getBeliefDistribution(self):
         return self.beliefs
