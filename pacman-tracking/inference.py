@@ -255,8 +255,7 @@ class ExactInference(InferenceModule):
         allPossible = util.Counter()
 
         # iterate through all the legal positions.
-        for p in self.legalPositions:
-            oldPos = p
+        for oldPos in self.legalPositions:
 
             # as mentioned in the comments, obtain the distribution over new positions for the ghost,
             # given its previous position (oldPos) as well as Pacman's current position.
@@ -317,17 +316,16 @@ class ParticleFilter(InferenceModule):
         self.particle_list = []
 
         """
-            generate particles in such a way that it stores value (> index) from the legal
-            positions.
-
-            Loop till we index is not reached the number of particles.
+            generate particles in such a way that every legal position should have the same
+            number of particles.
         """
-        particle_count = 0
-        while particle_count < self.numParticles:
-            for position in self.legalPositions:
-                if particle_count < self.numParticles:
-                    self.particle_list.append(position)
-                    particle_count += 1
+        particles_per_legal_positions = self.numParticles / len(self.legalPositions)
+
+        for position in self.legalPositions:
+            # this loop will perform generation of numParticles as:
+            # particles_per_legal_positions * legalPositions"
+            for i in range(particles_per_legal_positions):
+                self.particle_list += [position]
 
 
     def observe(self, observation, gameState):
@@ -409,7 +407,17 @@ class ParticleFilter(InferenceModule):
         a belief distribution.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        # create a new list that will hold the newly sampled particles over updated (t + 1) time particle distribution
+        elapsed_time_particle_list = []
+
+        for oldPos in self.particle_list:
+            newPosDist = self.getPositionDistribution(self.setGhostPosition(gameState, oldPos))
+            elapsed_time_particle_list.append(util.sample(newPosDist))
+
+        # update the particle list
+        self.particle_list = elapsed_time_particle_list
+
 
     def getBeliefDistribution(self):
         """
@@ -421,13 +429,15 @@ class ParticleFilter(InferenceModule):
         "*** YOUR CODE HERE ***"
 
         # creating a belief distribution
-        belief = util.Counter()
+        allPossible = util.Counter()
 
+        # convert particles to belief distribution
         for particle in self.particle_list:
-            belief[particle] += 1
+            allPossible[particle] += 1
 
-        belief.normalize()
-        return belief
+        # normalize the distribution map
+        allPossible.normalize()
+        return allPossible
 
 
 class MarginalInference(InferenceModule):
