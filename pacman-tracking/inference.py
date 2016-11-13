@@ -150,6 +150,10 @@ class ExactInference(InferenceModule):
 
         "*** YOUR CODE HERE ***"
 
+        # print "noisyDistance", noisyDistance
+        # print "emissionModel", emissionModel
+        # print "pacmanPosition", pacmanPosition
+
         """
             we are doing an estimation of new beliefs based the distance between pacman position and possible ghost
             positions
@@ -258,16 +262,16 @@ class ExactInference(InferenceModule):
             newPosDist = self.getPositionDistribution(self.setGhostPosition(gameState, oldPos))
 
             # iterate through the position distribution and determine the new belief for new position.
-            for newPos, prob in newPosDist.items():
+            for newPos, probability in newPosDist.items():
                 # newPostDist[p] = Pr( ghost is at position p at time t + 1 | ghost is at position oldPos at time t )
                 #
                 # new belief value for ghost position = Summation of product of all the probabilities at time t + 1
-                #                   
+                #
                 #                 Pr( ghost is at position p at time t + 1 | ghost is at position oldPos at time t )
                 #                                               *
                 #                           old belief value for ghost at position p
                 #
-                allPossible[newPos] += self.beliefs[oldPos] * prob
+                allPossible[newPos] += self.beliefs[oldPos] * probability
 
         # normalize the updated beliefs
         allPossible.normalize()
