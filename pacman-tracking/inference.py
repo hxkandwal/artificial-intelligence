@@ -154,41 +154,42 @@ class ExactInference(InferenceModule):
         # print "emissionModel", emissionModel
         # print "pacmanPosition", pacmanPosition
 
-        """
-            we are doing an estimation of new beliefs based the distance between pacman position and possible ghost
-            positions
-
-            As we know the emissionModel for any TrueDistance is =
-
-                    P (noisyDistance | TrueDistance)
-
-            which gives the probability of noisyDistance as per to the trueDistance i.e.
-                a. emissionModel[trueDistance] > 0.5, ghost is far from pacman
-                b. emissionModel[trueDistance] < 0.5, ghost is closer to pacman
-
-            The new belief can be computed as:
-
-                new_belief_value_for_ghost_position = P (noisyDistance | TrueDistance) *  old_belief_value_for_ghost_position
-
-        """
         # Replace this code with a correct observation update
         # Be sure to handle the "jail" edge case where the ghost is eaten
         # and noisyDistance is None
         allPossible = util.Counter()
-        for p in self.legalPositions:
-            trueDistance = util.manhattanDistance(p, pacmanPosition)
-            if emissionModel[trueDistance] > 0:
-                allPossible[p] = emissionModel[trueDistance] * self.beliefs[p]
 
-        """ handling the "jail" edge case: (noisyDistance == None)
-
-            if the ghost we are tracking is on the same location as that of pacman, then we have eaten the ghost.
-            Since, we are only dealing with 1 ghost so, when a ghost is eaten, we should place that ghost in
-            its prison cell, with probability 1.0
-
-        """
         if noisyDistance is None:
+            """
+                handling the "jail" edge case: (noisyDistance == None)
+
+                if the ghost we are tracking is on the same location as that of pacman, then we have eaten the ghost.
+                Since, we are only dealing with 1 ghost so, when a ghost is eaten, we should place that ghost in
+                its prison cell, with probability 1.0
+            """
             allPossible[self.getJailPosition()] = 1.0
+        else:
+            """
+                we are doing an estimation of new beliefs based the distance between pacman position and possible ghost
+                positions
+
+                As we know the emissionModel for any TrueDistance is =
+
+                        P (noisyDistance | TrueDistance)
+
+                which gives the probability of noisyDistance as per to the trueDistance i.e.
+                    a. emissionModel[trueDistance] > 0.5, ghost is far from pacman
+                    b. emissionModel[trueDistance] < 0.5, ghost is closer to pacman
+
+                The new belief can be computed as:
+
+                    new_belief_value_for_ghost_position = P (noisyDistance | TrueDistance) *  old_belief_value_for_ghost_position
+
+            """
+            for p in self.legalPositions:
+                trueDistance = util.manhattanDistance(p, pacmanPosition)
+                if emissionModel[trueDistance] > 0:
+                    allPossible[p] = emissionModel[trueDistance] * self.beliefs[p]
 
         "*** END YOUR CODE HERE ***"
 
@@ -262,16 +263,14 @@ class ExactInference(InferenceModule):
             newPosDist = self.getPositionDistribution(self.setGhostPosition(gameState, oldPos))
 
             # iterate through the position distribution and determine the new belief for new position.
-            for newPos, probability in newPosDist.items():
-                # newPostDist[p] = Pr( ghost is at position p at time t + 1 | ghost is at position oldPos at time t )
-                #
-                # new belief value for ghost position = Summation of product of all the probabilities at time t + 1
-                #
-                #                 Pr( ghost is at position p at time t + 1 | ghost is at position oldPos at time t )
-                #                                               *
-                #                           old belief value for ghost at position p
-                #
-                allPossible[newPos] += self.beliefs[oldPos] * probability
+            for newPos, prob in newPosDist.items():
+                """
+                new belief value for ghost at a legal new position =
+
+                    Summation of product of all the probabilities at time t + 1 (time lapse) to a new position
+                        from a (previous) position at time t with the belief value at the old position.
+                """
+                allPossible[newPos] += self.beliefs[oldPos] * prob
 
         # normalize the updated beliefs
         allPossible.normalize()
@@ -281,6 +280,7 @@ class ExactInference(InferenceModule):
 
     def getBeliefDistribution(self):
         return self.beliefs
+
 
 class ParticleFilter(InferenceModule):
     """
@@ -313,6 +313,23 @@ class ParticleFilter(InferenceModule):
         """
         "*** YOUR CODE HERE ***"
 
+        # list of particles. (not Counter, just a simple list)
+        self.particle_list = []
+
+        """
+            generate particles in such a way that it stores value (> index) from the legal
+            positions.
+
+            Loop till we index is not reached the number of particles.
+        """
+        particle_count = 0
+        while particle_count < self.numParticles:
+            for position in self.legalPositions:
+                if particle_count < self.numParticles:
+                    self.particle_list.append(position)
+                    particle_count += 1
+
+
     def observe(self, observation, gameState):
         """
         Update beliefs based on the given distance observation. Make sure to
@@ -344,7 +361,38 @@ class ParticleFilter(InferenceModule):
         emissionModel = busters.getObservationDistribution(noisyDistance)
         pacmanPosition = gameState.getPacmanPosition()
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        """
+            Case 1: When a ghost is captured by Pacman, all particles should be updated so that the ghost appears
+                    in its prison cell, self.getJailPosition()
+        """
+        if noisyDistance is None:
+            self.particle_list = [self.getJailPosition() for i in range(self.numParticles)]
+            return
+
+        """
+            Calculate weights for the particles
+        """
+
+        # Create a dictionary for distribution
+        allPossible = util.Counter()
+        belief = self.getBeliefDistribution()
+        for pos in self.legalPositions:
+            allPossible[pos] += emissionModel[util.manhattanDistance(pos, pacmanPosition)] * belief[pos]
+
+        """
+            Case 2: When all particles receive 0 weight, they should be recreated from the prior distribution by calling
+                    initializeUniformly.
+        """
+        if sum([allPossible[pos] for pos in self.legalPositions]) == 0:
+            self.initializeUniformly(gameState)
+            return
+
+        """
+            generate the samples from the weight distribution
+        """
+        self.particle_list = [util.sample(allPossible) for i in range(self.numParticles)]
+
 
     def elapseTime(self, gameState):
         """
@@ -371,7 +419,16 @@ class ParticleFilter(InferenceModule):
         Counter object)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        # creating a belief distribution
+        belief = util.Counter()
+
+        for particle in self.particle_list:
+            belief[particle] += 1
+
+        belief.normalize()
+        return belief
+
 
 class MarginalInference(InferenceModule):
     """
