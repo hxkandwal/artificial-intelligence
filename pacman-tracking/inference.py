@@ -590,7 +590,7 @@ class JointParticleFilter:
         emissionModels = [busters.getObservationDistribution(dist) for dist in noisyDistances]
 
         "*** YOUR CODE HERE ***"
-        # Create a dictionary for distribution
+        # Create a dictionary for ghost weight distribution for a particle.
         allPossible = util.Counter()
 
         """
@@ -619,7 +619,8 @@ class JointParticleFilter:
                     # convert tuple to a list (mutable) and then convert the updated list back to tuple.
                     particle = self.getParticleWithGhostInJail(particle, ghost_index)
 
-            # this is also cumulative addition as self.particles is a list and we can have duplicate particles.
+            # this is also cumulative addition as self.particles is a list and we can have duplicate particles i.e. with
+            # same ghost weight distribution.
             allPossible[particle] += cumulative_particle_weight
 
         """
