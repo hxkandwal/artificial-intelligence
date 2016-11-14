@@ -258,7 +258,7 @@ class ExactInference(InferenceModule):
         for oldPos in self.legalPositions:
 
             # as mentioned in the comments, obtain the distribution over new positions for the ghost,
-            # given its previous position (oldPos) as well as Pacman's current position.
+            # given its previous position (oldPos) as well as Pac-man's current position.
             newPosDist = self.getPositionDistribution(self.setGhostPosition(gameState, oldPos))
 
             # iterate through the position distribution and determine the new belief for new position.
@@ -266,8 +266,8 @@ class ExactInference(InferenceModule):
                 """
                 new belief value for ghost at a legal new position =
 
-                    Summation of product of all the probabilities at time t + 1 (time lapse) to a new position
-                        from a (previous) position at time t with the belief value at the old position.
+                    Summation of the product of all probabilities at time t + 1 (time lapse) to a new position
+                        from a (previous) position at time t, with the belief value at the old position.
                 """
                 allPossible[newPos] += self.beliefs[oldPos] * prob
 
@@ -375,14 +375,16 @@ class ParticleFilter(InferenceModule):
         # Create a dictionary for distribution
         allPossible = util.Counter()
         belief = self.getBeliefDistribution()
+
+        # calculate the new beliefs using probabilities of prior belief and new distance observation.
         for pos in self.legalPositions:
-            allPossible[pos] += emissionModel[util.manhattanDistance(pos, pacmanPosition)] * belief[pos]
+            allPossible[pos] = emissionModel[util.manhattanDistance(pos, pacmanPosition)] * belief[pos]
 
         """
             Case 2: When all particles receive 0 weight, they should be recreated from the prior distribution by calling
                     initializeUniformly.
         """
-        if sum([allPossible[pos] for pos in self.legalPositions]) == 0:
+        if sum(allPossible.values()) == 0:
             self.initializeUniformly(gameState)
             return
 
@@ -390,7 +392,6 @@ class ParticleFilter(InferenceModule):
             generate the samples from the weight distribution
         """
         self.particle_list = [util.sample(allPossible) for i in range(self.numParticles)]
-
 
     def elapseTime(self, gameState):
         """
@@ -431,7 +432,10 @@ class ParticleFilter(InferenceModule):
         # creating a belief distribution
         allPossible = util.Counter()
 
-        # convert particles to belief distribution
+        """
+            convert particles to belief distribution
+        """
+        # count occurrence of each particle and normalize it.
         for particle in self.particle_list:
             allPossible[particle] += 1
 
@@ -512,6 +516,34 @@ class JointParticleFilter:
         """
         "*** YOUR CODE HERE ***"
 
+        # list of particles. (not Counter, just a simple list)
+        self.particles = []
+
+        """
+            Each particle is a tuple of ghost positions.
+
+            Since multiple ghost can occupy same space so, estimated particles are cartesian product,
+            containing permutations of all the legal positions with width (tuple size) as number of
+            ghosts.
+        """
+        particle_positions = list(itertools.product(self.legalPositions, repeat=self.numGhosts))
+
+        # permutations are not returned in a random order; shuffling the list of permutations in
+        # order to ensure even placement of particles across the board.
+        random.shuffle(particle_positions)
+
+        """
+            generate particles in such a way that every legal position should have the same
+            number of particles.
+        """
+        particles_per_legal_positions = self.numParticles / len(particle_positions)
+
+        for position in particle_positions:
+            # this loop will perform generation of numParticles as:
+            # particles_per_legal_positions * legalPositions"
+            for i in range(particles_per_legal_positions):
+                self.particles += [position]
+
     def addGhostAgent(self, agent):
         """
         Each ghost agent is registered separately and stored (in case they are
@@ -558,6 +590,51 @@ class JointParticleFilter:
         emissionModels = [busters.getObservationDistribution(dist) for dist in noisyDistances]
 
         "*** YOUR CODE HERE ***"
+        # Create a dictionary for distribution
+        allPossible = util.Counter()
+
+        """
+            Re-sample weights for the particles using the likelihood of the noisy observations.
+        """
+        # take each particle one by one and assign the computed cumulative weight based on the noisyDistances.
+        for particle in self.particles:
+
+            # cumulative weight that would be calculated for the particle.
+            cumulative_particle_weight = 1.0
+
+            # since, each particle is a tuple of size equal to numGhosts, we will iterate through the tuple
+            # to calculate the cumulative weight of the particle.
+            for ghost_index in range(self.numGhosts):
+
+                # if there is value for noisy distance, ghosts is still alive.
+                if noisyDistances[ghost_index] is not None:
+                    cumulative_particle_weight *= emissionModels[ghost_index][util.manhattanDistance(particle[ghost_index], pacmanPosition)]
+
+                else:
+                    """
+                        Case 1: When a ghost is captured by Pac-man, all particles should be updated so that the ghost appears
+                                in its prison cell, position self.getJailPosition(i) where `i` is the index of the ghost.
+                    """
+                    # since particle is a tuple and we cannot modify a tuple directly (immutable), so we will first
+                    # convert tuple to a list (mutable) and then convert the updated list back to tuple.
+                    particle = self.getParticleWithGhostInJail(particle, ghost_index)
+
+            # this is also cumulative addition as self.particles is a list and we can have duplicate particles.
+            allPossible[particle] += cumulative_particle_weight
+
+        """
+            Case 2: When all particles receive 0 weight, they should be recreated from the prior distribution by calling
+                    initializeParticles.
+        """
+        if sum(allPossible.values()) == 0:
+            self.initializeParticles()
+            return
+
+        """
+            generate the samples from the weight distribution
+        """
+        # sample particle-weight distribution to generate new particles.
+        self.particles = [util.sample(allPossible) for i in range(self.numParticles)]
 
     def getParticleWithGhostInJail(self, particle, ghostIndex):
         """
@@ -618,6 +695,10 @@ class JointParticleFilter:
             # now loop through and update each entry in newParticle...
 
             "*** YOUR CODE HERE ***"
+            for i in range(self.numGhosts):
+                newPosDist = getPositionDistributionForGhost(setGhostPositions(gameState, newParticle), i, self.ghostAgents[i])
+                sample = util.sample(newPosDist)
+                newParticle[i] = sample
 
             "*** END YOUR CODE HERE ***"
             newParticles.append(tuple(newParticle))
@@ -625,7 +706,20 @@ class JointParticleFilter:
 
     def getBeliefDistribution(self):
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        # creating a belief distribution
+        allPossible = util.Counter()
+
+        """
+            convert particles to belief distribution
+        """
+        # count occurrence of each particle and normalize it.
+        for particle in self.particles:
+            allPossible[particle] += 1
+
+        # normalize the distribution map
+        allPossible.normalize()
+        return allPossible
 
 # One JointInference module is shared globally across instances of MarginalInference
 jointInference = JointParticleFilter()
