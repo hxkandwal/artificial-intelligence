@@ -172,7 +172,7 @@ class GreedyBustersAgent(BustersAgent):
         closest_ghost_position_distance = float('inf')
         for distribution in livingGhostPositionDistributions:
 
-            # get the ghost position with the highest probability in the distribution
+            # get the living ghost position with the highest probability (belief value) in the distribution
             position = distribution.argMax()
 
             # calculate mazeDistance between the highest probabilistic ghost in the distribution and pac-man
