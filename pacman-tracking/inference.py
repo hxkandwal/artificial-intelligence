@@ -602,8 +602,8 @@ class JointParticleFilter:
             # cumulative weight that would be calculated for the particle.
             cumulative_particle_weight = 1.0
 
-            # since, each particle is a tuple of size equal to numGhosts, we will iterate through the tuple
-            # to calculate the cumulative weight of the particle.
+            # since, each particle is a tuple of size equal to numGhosts, we will iterate through the range of numGhosts
+            # to calculate the cumulative weight of the particle, using each ghost index
             for ghost_index in range(self.numGhosts):
 
                 # if there is value for noisy distance, ghosts is still alive.
@@ -695,10 +695,13 @@ class JointParticleFilter:
             # now loop through and update each entry in newParticle...
 
             "*** YOUR CODE HERE ***"
-            for i in range(self.numGhosts):
-                newPosDist = getPositionDistributionForGhost(setGhostPositions(gameState, newParticle), i, self.ghostAgents[i])
-                sample = util.sample(newPosDist)
-                newParticle[i] = sample
+            # since, each particle is a tuple of size equal to numGhosts, we will iterate through the range of numGhosts
+            # to calculate the sample value for each ghost index in the newParticle
+            for ghost_index in range(self.numGhosts):
+                newPosDist = getPositionDistributionForGhost(setGhostPositions(gameState, newParticle), ghost_index, self.ghostAgents[ghost_index])
+
+                # sample the new position distribution for ghost at ghost_index and assign it to the newParticle[ghost_index]
+                newParticle[ghost_index] = util.sample(newPosDist)
 
             "*** END YOUR CODE HERE ***"
             newParticles.append(tuple(newParticle))
