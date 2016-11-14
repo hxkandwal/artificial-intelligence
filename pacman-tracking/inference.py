@@ -157,6 +157,8 @@ class ExactInference(InferenceModule):
         # Replace this code with a correct observation update
         # Be sure to handle the "jail" edge case where the ghost is eaten
         # and noisyDistance is None
+
+        # create a dictionary (map) to store the beliefs.
         allPossible = util.Counter()
 
         if noisyDistance is None:
@@ -168,28 +170,32 @@ class ExactInference(InferenceModule):
                 its prison cell, with probability 1.0
             """
             allPossible[self.getJailPosition()] = 1.0
-        else:
-            """
-                we are doing an estimation of new beliefs based the distance between pacman position and possible ghost
-                positions
 
-                As we know the emissionModel for any TrueDistance is =
+            # update the beliefs and return.
+            self.beliefs = allPossible
+            return
 
-                        P (noisyDistance | TrueDistance)
+        """
+            we are doing an estimation of new beliefs based the distance between pacman position and possible ghost
+            positions
 
-                which gives the probability of noisyDistance as per to the trueDistance i.e.
-                    a. emissionModel[trueDistance] > 0.5, ghost is far from pacman
-                    b. emissionModel[trueDistance] < 0.5, ghost is closer to pacman
+            As we know the emissionModel for any TrueDistance is =
 
-                The new belief can be computed as:
+                    P (noisyDistance | TrueDistance)
 
-                    new_belief_value_for_ghost_position = P (noisyDistance | TrueDistance) *  old_belief_value_for_ghost_position
+            which gives the probability of noisyDistance as per to the trueDistance i.e.
+                a. emissionModel[trueDistance] > 0.5, ghost is far from pacman
+                b. emissionModel[trueDistance] < 0.5, ghost is closer to pacman
 
-            """
-            for p in self.legalPositions:
-                trueDistance = util.manhattanDistance(p, pacmanPosition)
-                if emissionModel[trueDistance] > 0:
-                    allPossible[p] = emissionModel[trueDistance] * self.beliefs[p]
+            The new belief can be computed as:
+
+                new_belief_value_for_ghost_position = P (noisyDistance | TrueDistance) *  old_belief_value_for_ghost_position
+
+        """
+        for p in self.legalPositions:
+            trueDistance = util.manhattanDistance(p, pacmanPosition)
+            if emissionModel[trueDistance] > 0:
+                allPossible[p] = emissionModel[trueDistance] * self.beliefs[p]
 
         "*** END YOUR CODE HERE ***"
 
@@ -274,7 +280,7 @@ class ExactInference(InferenceModule):
         # normalize the updated beliefs
         allPossible.normalize()
 
-        # update the pacman with new beliefs
+        # update the pac-man with new beliefs
         self.beliefs = allPossible
 
     def getBeliefDistribution(self):
@@ -325,8 +331,7 @@ class ParticleFilter(InferenceModule):
             # this loop will perform generation of numParticles as:
             # particles_per_legal_positions * legalPositions"
             for i in range(particles_per_legal_positions):
-                self.particles += [position]
-
+                self.particles.append(position)
 
     def observe(self, observation, gameState):
         """
@@ -542,7 +547,7 @@ class JointParticleFilter:
             # this loop will perform generation of numParticles as:
             # particles_per_legal_positions * legalPositions"
             for i in range(particles_per_legal_positions):
-                self.particles += [position]
+                self.particles.append(position)
 
     def addGhostAgent(self, agent):
         """
@@ -701,7 +706,8 @@ class JointParticleFilter:
             for ghost_index in range(self.numGhosts):
                 newPosDist = getPositionDistributionForGhost(setGhostPositions(gameState, newParticle), ghost_index, self.ghostAgents[ghost_index])
 
-                # sample the new position distribution for ghost at ghost_index and assign it to the newParticle[ghost_index]
+                # sample the new position distribution for ghost at ghost_index and assign it to the
+                # newParticle[ghost_index]
                 newParticle[ghost_index] = util.sample(newPosDist)
 
             "*** END YOUR CODE HERE ***"
