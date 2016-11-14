@@ -313,7 +313,7 @@ class ParticleFilter(InferenceModule):
         "*** YOUR CODE HERE ***"
 
         # list of particles. (not Counter, just a simple list)
-        self.particle_list = []
+        self.particles = []
 
         """
             generate particles in such a way that every legal position should have the same
@@ -325,7 +325,7 @@ class ParticleFilter(InferenceModule):
             # this loop will perform generation of numParticles as:
             # particles_per_legal_positions * legalPositions"
             for i in range(particles_per_legal_positions):
-                self.particle_list += [position]
+                self.particles += [position]
 
 
     def observe(self, observation, gameState):
@@ -365,7 +365,7 @@ class ParticleFilter(InferenceModule):
                     in its prison cell, self.getJailPosition()
         """
         if noisyDistance is None:
-            self.particle_list = [self.getJailPosition() for i in range(self.numParticles)]
+            self.particles = [self.getJailPosition() for i in range(self.numParticles)]
             return
 
         """
@@ -391,7 +391,7 @@ class ParticleFilter(InferenceModule):
         """
             generate the samples from the weight distribution
         """
-        self.particle_list = [util.sample(allPossible) for i in range(self.numParticles)]
+        self.particles = [util.sample(allPossible) for i in range(self.numParticles)]
 
     def elapseTime(self, gameState):
         """
@@ -412,12 +412,12 @@ class ParticleFilter(InferenceModule):
         # create a new list that will hold the newly sampled particles over updated (t + 1) time particle distribution
         elapsed_time_particle_list = []
 
-        for oldPos in self.particle_list:
+        for oldPos in self.particles:
             newPosDist = self.getPositionDistribution(self.setGhostPosition(gameState, oldPos))
             elapsed_time_particle_list.append(util.sample(newPosDist))
 
         # update the particle list
-        self.particle_list = elapsed_time_particle_list
+        self.particles = elapsed_time_particle_list
 
 
     def getBeliefDistribution(self):
@@ -436,7 +436,7 @@ class ParticleFilter(InferenceModule):
             convert particles to belief distribution
         """
         # count occurrence of each particle and normalize it.
-        for particle in self.particle_list:
+        for particle in self.particles:
             allPossible[particle] += 1
 
         # normalize the distribution map
@@ -516,7 +516,7 @@ class JointParticleFilter:
         """
         "*** YOUR CODE HERE ***"
 
-        # list of particles. (not Counter, just a simple list)
+        # list of particles. (not Counter, just a simple list as suggested in comments)
         self.particles = []
 
         """
