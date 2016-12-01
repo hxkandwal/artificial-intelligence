@@ -55,7 +55,26 @@ class PerceptronClassifier:
             print "Starting iteration ", iteration, "..."
             for i in range(len(trainingData)):
                 "*** YOUR CODE HERE ***"
-                util.raiseNotDefined()
+                training_data_instance = trainingData[i]
+                training_data_label = trainingLabels[i]
+
+                # When we come to an instance (f,y)(f,y), we find the label with highest score
+                (max_label_score, best_label) = (None, None)
+                for label in self.legalLabels:
+                    local_label_score = 0
+
+                    for feature in self.features:
+                        local_label_score += self.weights[label][feature] * training_data_instance[feature]
+
+                    if max_label_score is None or max_label_score < local_label_score:
+                        max_label_score = local_label_score
+                        best_label = label
+
+                # adjust weights if argmax label is different than training_data_label
+                if best_label != training_data_label:
+                    for feature in self.features:
+                        self.weights[best_label][feature] -= training_data_instance[feature]
+                        self.weights[training_data_label][feature] += training_data_instance[feature]
 
     def classify(self, data ):
         """
