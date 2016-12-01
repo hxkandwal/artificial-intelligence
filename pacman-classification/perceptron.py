@@ -99,6 +99,9 @@ class PerceptronClassifier:
         featuresWeights = []
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        # here, I have taken XOR of label and values from 1 to 100
+        for idx in range(1, 100, 1):
+            featuresWeights.append(idx ^ label)
 
         return featuresWeights
