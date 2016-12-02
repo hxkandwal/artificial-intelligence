@@ -60,8 +60,61 @@ class MiraClassifier:
         datum is a counter from features to values for those features
         representing a vector of values.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # DO NOT ZERO OUT YOUR WEIGHTS BEFORE STARTING TRAINING, OR
+        # THE AUTOGRADER WILL LIKELY DEDUCT POINTS.
+
+        best_tuned_weights = {}
+        best_classification_accuracy = None
+
+        for c_value in Cgrid:
+            local_weights = self.weights.copy()
+            local_classification_accuracy = 0
+
+            for iteration in range(self.max_iterations):
+                local_iteration_classification_accuracy = 0
+
+                print "Starting iteration ", iteration, "..."
+                for i in range(len(trainingData)):
+
+                    training_data_instance = trainingData[i]
+                    training_data_label = trainingLabels[i]
+
+                    # When we come to an instance (f,y)(f,y), we find the label with highest score
+                    (max_label_score, best_label) = (None, None)
+                    for label in self.legalLabels:
+                        local_label_score = 0
+
+                        for feature in self.features:
+                            local_label_score += local_weights[label][feature] * training_data_instance[feature]
+
+                        if max_label_score is None or max_label_score < local_label_score:
+                            max_label_score = local_label_score
+                            best_label = label
+
+                    # adjust weights if arg-max label is different than training_data_label
+                    if best_label != training_data_label:
+
+                        # MIRA : choose	an update size that fixes the current mistake but, minimizes the change	to w
+                        tuning_rate = min(c_value, ((local_weights[best_label] - local_weights[training_data_label]) *
+                                                    training_data_instance + 1.0) / (2.0 * (training_data_instance *
+                                                                                            training_data_instance)))
+
+                        # update the weights with the tuning (learning) rate value.
+                        for feature in self.features:
+                            local_weights[best_label][feature] -= tuning_rate * training_data_instance[feature]
+                            local_weights[training_data_label][feature] += tuning_rate * training_data_instance[feature]
+                    else:
+                        local_iteration_classification_accuracy += 1
+
+                # update the local c-value classification accuracy.
+                if local_iteration_classification_accuracy > local_classification_accuracy:
+                    local_classification_accuracy = local_iteration_classification_accuracy
+
+            if local_classification_accuracy > best_classification_accuracy:
+                best_classification_accuracy = local_classification_accuracy
+                best_tuned_weights = local_weights
+
+        self.weights = best_tuned_weights
 
     def classify(self, data ):
         """
