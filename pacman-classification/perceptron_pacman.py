@@ -50,4 +50,23 @@ class PerceptronClassifierPacman(PerceptronClassifier):
             print "Starting iteration ", iteration, "..."
             for i in range(len(trainingData)):
                 "*** YOUR CODE HERE ***"
-                util.raiseNotDefined()
+                training_data_instance = trainingData[i]
+                training_data_action = trainingLabels[i]
+
+                # When we come to an instance (f,y)(f,y), we find the label with highest score
+                (max_action_score, best_action) = (None, None)
+                for action in training_data_instance[1]:
+                    local_action_score = 0
+
+                    for feature in self.features:
+                        local_action_score += self.weights[feature] * training_data_instance[0][action][feature]
+
+                    if max_action_score is None or max_action_score < local_action_score:
+                        max_action_score = local_action_score
+                        best_action = action
+
+                # adjust weights if argmax label is different than training_data_label
+                if best_action != training_data_action:
+                    for feature in self.features:
+                        self.weights[feature] -= training_data_instance[0][best_action][feature]
+                        self.weights[feature] += training_data_instance[0][training_data_action][feature]
