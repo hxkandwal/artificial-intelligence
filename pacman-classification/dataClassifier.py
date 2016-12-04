@@ -205,7 +205,7 @@ def enhancedPacmanFeatures(state, action):
     "*** YOUR CODE HERE ***"
 
     """
-        predict the features based on the future pacman position and game state.
+        predict the features based on the future pac-man position and game state.
 
         Feature 1: Count of all remaining food.
     """
@@ -220,49 +220,36 @@ def enhancedPacmanFeatures(state, action):
     features['remaining-food'] = future_state.getNumFood()
 
     """
-        Feature 2: Determine the probability of closest food.
-
-        this is computed as = closest_food_distance / total_food_distance
+        Feature 2: Determine the distance to the closest food.
     """
     food_locations = future_state.getFood().asList()
-    closest_food_distance_probability = 0
+    closest_food_distance = 0
 
     if food_locations:
-        total_foods_distance = 0
         closest_food_distance = float("inf")
 
         for food_location in food_locations:
             food_distance = util.manhattanDistance(future_pacman_position, food_location)
-
             closest_food_distance = min(closest_food_distance, food_distance)
-            total_foods_distance += food_distance
 
-        closest_food_distance_probability = closest_food_distance / total_foods_distance
-
-    features['closest-probable-food'] = closest_food_distance_probability
+    features['closest-food'] = closest_food_distance
 
     """
-        Feature 3: Determine the probability of closest ghost.
-
-        this is computed as = closest_food_distance / total_food_distance
+        Feature 3: Determine the distance to the closest ghost.
     """
     ghost_locations = future_state.getGhostPositions()
-    closest_ghost_distance_probability = 0
+    closest_ghost_distance = 0
 
     if ghost_locations:
-        total_ghosts_distance = 0
         closest_ghost_distance = float("inf")
 
         for ghost_location in ghost_locations:
             ghost_distance = util.manhattanDistance(future_pacman_position, ghost_location)
-
             closest_ghost_distance = min(closest_ghost_distance, ghost_distance)
-            total_ghosts_distance += ghost_distance
 
-        closest_ghost_distance_probability = closest_ghost_distance / total_ghosts_distance
+    features['closest-ghost'] = closest_ghost_distance
 
-    features['closest-probable-ghost'] = closest_ghost_distance_probability
-
+    # return the extracted features.
     return features
 
 
