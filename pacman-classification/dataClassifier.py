@@ -73,15 +73,91 @@ def enhancedFeatureExtractorDigit(datum):
 
     ## DESCRIBE YOUR ENHANCED FEATURES HERE...
 
+    I will Add new binary features for the digit dataset in the EnhancedFeatureExtractorDigit function.
+    Such that I can encode a feature which takes 3 values [1,2,3] by using 3 binary features, of which only one is on at
+    the time, to indicate which of the three possibilities you have.
+
+    Since, we have continuous Hash (black) region and seperated white region so I will make use of white regions.
+    Example : 8 => 3 white regions
+              6, 9 => 2 white regions
+
+    In the digit data, consider the number of separate, connected regions of white pixels, which varies by digit type.
+    1, 2, 3, 5, 7 tend to have one contiguous region of white space while the loops in 6, 8, 9 create more.
+
+    We will deduce the features with the semantics that:
+        extracted_features = [1, 0, 0]
+
+        0 Index  = 1 if there is one white region; 0 otherwise
+        1 Index  = 1 if there are two separate white regions; 0 otherwise
+        2 Index  = if there are three or more separate white regions; 0 otherwise
     ##
     """
-    features =  basicFeatureExtractorDigit(datum)
+    features = basicFeatureExtractorDigit(datum)
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    """
+     call to the DFS algorithm to determine the number of connected white regions.
+    """
+    # create a dictionary to store the information about the visited pixels (avoid re-visiting)
+    visited_pixels = util.Counter()
+
+    connected_regions = 0
+    for x in range(DIGIT_DATUM_WIDTH):
+        for y in range(DIGIT_DATUM_HEIGHT):
+            # if pixel was not seen, process it.
+            if visited_pixels[(x, y)] == 0 and features[(x, y)] == 0:
+                # mark pixel as seen
+                visited_pixels[(x, y)] == 1
+
+                # increase count for seperate white regions
+                connected_regions += 1
+
+                # call DFS algorithm for recursive expansion of connected white regions
+                determineWhiteRegionsDFS((x, y), visited_pixels, features)
+
+    # print 'connected_regions' , connected_regions
+
+    features['1'] = 1 if(connected_regions == 1) else 0
+    features['2'] = 1 if(connected_regions == 2) else 0
+    features['3'] = 1 if(connected_regions > 2) else 0
 
     return features
 
+
+def determineWhiteRegionsDFS((x, y), visited_pixels, features):
+
+    if x + 1 < DIGIT_DATUM_WIDTH:
+        # if not seen yet, process it.
+        if visited_pixels[(x + 1, y)] == 0 and features[(x + 1, y)] == 0:
+            # mark as seen
+            visited_pixels[(x + 1, y)] = 1
+            # recurse again to determine neighbouring pixel component information
+            determineWhiteRegionsDFS((x + 1, y), visited_pixels, features)
+
+    if x-1 >= 0:
+        # if not seen yet, process it.
+        if visited_pixels[(x - 1, y)] == 0 and features[(x - 1, y)] == 0:
+            # mark as seen
+            visited_pixels[(x - 1, y)] = 1
+            # recurse again to determine neighbouring pixel component information
+            determineWhiteRegionsDFS((x - 1, y), visited_pixels, features)
+
+    if y + 1 < DIGIT_DATUM_HEIGHT:
+        # if not seen yet, process it.
+        if visited_pixels[(x, y + 1)] == 0 and features[(x, y + 1)] == 0:
+            # mark as seen
+            visited_pixels[(x, y + 1)] = 1
+            # recurse again to determine neighbouring pixel component information
+            determineWhiteRegionsDFS((x, y + 1), visited_pixels, features)
+
+    if y - 1 >= 0:
+        # if not seen yet, process it.
+        if visited_pixels[(x, y - 1)] == 0 and features[(x, y - 1)] == 0:
+            # mark as seen
+            visited_pixels[(x, y - 1)] = 1
+            # recurse again to determine neighbouring pixel component information
+            determineWhiteRegionsDFS((x, y - 1), visited_pixels, features)
 
 
 def basicFeatureExtractorPacman(state):
