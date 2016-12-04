@@ -103,6 +103,9 @@ def enhancedFeatureExtractorDigit(datum):
     visited_pixels = util.Counter()
 
     connected_regions = 0
+
+    # Since, we are using DFS we have to loop through all the pixels to ensure full coverage as DFS will stop at the
+    # end of each component traversal.
     for x in range(DIGIT_DATUM_WIDTH):
         for y in range(DIGIT_DATUM_HEIGHT):
             # if pixel was not seen, process it.
