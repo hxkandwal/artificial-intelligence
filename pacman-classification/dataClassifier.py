@@ -99,8 +99,8 @@ def enhancedFeatureExtractorDigit(datum):
     """
      call to the DFS algorithm to determine the number of connected white regions.
     """
-    # create a dictionary to store the information about the visited pixels (avoid re-visiting)
-    visited_pixels = util.Counter()
+    # create a set to store the information about the visited pixels (avoid re-visiting)
+    visited_pixels = set()
 
     connected_regions = 0
 
@@ -109,9 +109,9 @@ def enhancedFeatureExtractorDigit(datum):
     for x in range(DIGIT_DATUM_WIDTH):
         for y in range(DIGIT_DATUM_HEIGHT):
             # if pixel was not seen, process it.
-            if visited_pixels[(x, y)] == 0 and features[(x, y)] == 0:
+            if (x, y) not in visited_pixels and features[(x, y)] == 0:
                 # mark pixel as seen
-                visited_pixels[(x, y)] == 1
+                visited_pixels.add((x, y))
 
                 # increase count for seperate white regions
                 connected_regions += 1
@@ -132,33 +132,33 @@ def determineWhiteRegionsDFS((x, y), visited_pixels, features):
 
     if x + 1 < DIGIT_DATUM_WIDTH:
         # if not seen yet, process it.
-        if visited_pixels[(x + 1, y)] == 0 and features[(x + 1, y)] == 0:
+        if (x + 1, y) not in visited_pixels and features[(x + 1, y)] == 0:
             # mark as seen
-            visited_pixels[(x + 1, y)] = 1
+            visited_pixels.add((x + 1, y))
             # recurse again to determine neighbouring pixel component information
             determineWhiteRegionsDFS((x + 1, y), visited_pixels, features)
 
-    if x-1 >= 0:
+    if x - 1 >= 0:
         # if not seen yet, process it.
-        if visited_pixels[(x - 1, y)] == 0 and features[(x - 1, y)] == 0:
+        if (x - 1, y) not in visited_pixels and features[(x - 1, y)] == 0:
             # mark as seen
-            visited_pixels[(x - 1, y)] = 1
+            visited_pixels.add((x - 1, y))
             # recurse again to determine neighbouring pixel component information
             determineWhiteRegionsDFS((x - 1, y), visited_pixels, features)
 
     if y + 1 < DIGIT_DATUM_HEIGHT:
         # if not seen yet, process it.
-        if visited_pixels[(x, y + 1)] == 0 and features[(x, y + 1)] == 0:
+        if (x, y + 1) not in visited_pixels and features[(x, y + 1)] == 0:
             # mark as seen
-            visited_pixels[(x, y + 1)] = 1
+            visited_pixels.add((x, y + 1))
             # recurse again to determine neighbouring pixel component information
             determineWhiteRegionsDFS((x, y + 1), visited_pixels, features)
 
     if y - 1 >= 0:
         # if not seen yet, process it.
-        if visited_pixels[(x, y - 1)] == 0 and features[(x, y - 1)] == 0:
+        if (x, y - 1) not in visited_pixels and features[(x, y - 1)] == 0:
             # mark as seen
-            visited_pixels[(x, y - 1)] = 1
+            visited_pixels.add((x, y - 1))
             # recurse again to determine neighbouring pixel component information
             determineWhiteRegionsDFS((x, y - 1), visited_pixels, features)
 
